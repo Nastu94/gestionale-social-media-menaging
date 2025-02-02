@@ -1,66 +1,66 @@
-# Gestionale Social Media Managing
+# Social Media Management System
 
-**Gestionale Social Media Managing** è un'applicazione progettata per centralizzare e semplificare la gestione dei contenuti sui social media, offrendo un insieme integrato di funzionalità che spaziano dalla pianificazione e pubblicazione dei post, alla gestione dei file multimediali, fino all'uso di strumenti di intelligenza artificiale per la generazione di testi e contenuti.
+**Social Media Management System** is an application designed to centralize and simplify content management for social media, offering an integrated set of features ranging from scheduling and publishing posts to managing multimedia files and utilizing artificial intelligence for text and content generation.
 
-## Descrizione del Progetto
+## Project Description
 
-Questo gestionale nasce con l'obiettivo di unificare più strumenti in un'unica interfaccia, eliminando la necessità di passare da una piattaforma all'altra. L'applicazione consente di:
-- Pianificare e programmare post su diverse piattaforme social in modo coordinato.
-- Gestire e sincronizzare file e media attraverso l'integrazione con Nextcloud.
-- Sfruttare le potenzialità di ChatGPT per suggerimenti di contenuto e generazione automatica di testi, migliorando così l'engagement e la qualità delle comunicazioni.
+This management system was created with the goal of unifying multiple tools into a single interface, eliminating the need to switch between platforms. The application allows you to:
+- Schedule and program posts on various social media platforms in a coordinated manner.
+- Manage and synchronize files and media through integration with Nextcloud.
+- Leverage ChatGPT’s capabilities to generate text suggestions and automatically create content, thereby improving engagement and communication quality.
 
-La combinazione di queste funzionalità permette di ottimizzare il flusso di lavoro e garantire una presenza social media più efficiente e coerente.
+Combining these functionalities optimizes workflow and ensures a more efficient and consistent social media presence.
 
-## Funzionalità Principali
+## Main Features
 
-- **Gestione dei Contenuti Social:**  
-  Organizza il calendario dei post, gestisce la pubblicazione e offre una panoramica completa delle attività sui social media.
+- **Social Content Management:**  
+  Organize your posting calendar, manage publications, and gain a comprehensive overview of social media activities.
 
-- **Integrazione con Nextcloud:**  
-  Sincronizza i file relativi ai contenuti (immagini, video, documenti) con il server Nextcloud, facilitando la gestione dei media e la condivisione sicura dei contenuti.
+- **Nextcloud Integration:**  
+  Synchronize content files (images, videos, documents) with your Nextcloud server, enabling secure and centralized media management and sharing.
 
-- **Supporto AI con ChatGPT:**  
-  Utilizza le API di ChatGPT per assistere nella creazione di testi, suggerire modifiche e migliorare la comunicazione attraverso contenuti generati automaticamente, basati su input e parametri personalizzati.
+- **AI Support with ChatGPT:**  
+  Use ChatGPT’s APIs to assist with text creation, suggest edits, and enhance communication with automatically generated content based on customized input and parameters.
 
-- **Configurazione Personalizzabile:**  
-  I file di configurazione inclusi nel progetto permettono di impostare i valori necessari per le connessioni a Nextcloud e alle API di ChatGPT. Questo consente di adattare l'applicazione alle specifiche esigenze di ogni utente o ambiente di lavoro.
+- **Customizable Configuration:**  
+  Configuration files included in the project allow you to set the necessary values for connecting to Nextcloud and ChatGPT APIs. This flexibility enables the application to be adapted to the specific needs of each user or work environment.
 
-## Istruzioni per la Configurazione
+## Configuration Instructions
 
-Per garantire il corretto funzionamento delle integrazioni, è necessario personalizzare alcuni file di configurazione presenti nel progetto. In particolare:
+To ensure proper functionality of the integrations, you need to customize certain configuration files within the project. Specifically:
 
-- **Impostazioni per Nextcloud:**  
-  Nei file di configurazione dedicati, inserisci l'URL del tuo server Nextcloud, le credenziali di accesso (nome utente, password o token) e altri parametri richiesti per la connessione. Queste impostazioni sono fondamentali per abilitare la sincronizzazione e la gestione automatica dei file multimediali.
+- **Nextcloud Settings:**  
+  In the dedicated configuration files, insert your Nextcloud server URL, access credentials (username, password, or token), and any other required parameters. These settings are essential for enabling automatic file synchronization and management of multimedia content.
 
-- **Impostazioni per ChatGPT:**  
-  Nei file di configurazione relativi alle API, specifica la chiave API fornita da OpenAI e, se necessario, configura ulteriori parametri relativi al funzionamento dell'intelligenza artificiale. Consulta la documentazione di OpenAI per sfruttare al meglio le funzionalità offerte da ChatGPT.
+- **ChatGPT Settings:**  
+  In the API configuration files, specify the API key provided by OpenAI and, if necessary, configure additional parameters related to the AI’s operation. Be sure to consult OpenAI’s documentation to fully leverage the functionalities offered by ChatGPT.
 
-> **Nota:** I valori attualmente presenti nei file di configurazione sono di esempio e devono essere sostituiti con quelli reali in base alle tue esigenze operative e alle informazioni fornite dai rispettivi servizi.
+> **Note:** The values currently present in the configuration files are examples and must be replaced with real values according to your operational requirements and the information provided by the respective services.
 
-## Vantaggi dell'Utilizzo del Gestionale
+## Benefits of Using the Management System
 
-- **Centralizzazione dei Processi:**  
-  Tutte le operazioni di gestione, sincronizzazione e creazione dei contenuti avvengono da un'unica interfaccia, riducendo tempi e complessità.
+- **Process Centralization:**  
+  All operations related to content management, synchronization, and creation are carried out from a single interface, reducing time and complexity.
 
-- **Automazione Intelligente:**  
-  L'integrazione con ChatGPT consente di automatizzare la generazione di testi, offrendo spunti creativi e riducendo il carico di lavoro manuale.
+- **Intelligent Automation:**  
+  Integration with ChatGPT enables the automation of text generation, offering creative insights and reducing manual workload.
 
-- **Flessibilità e Personalizzazione:**  
-  La possibilità di configurare separatamente le impostazioni per Nextcloud e ChatGPT permette di adattare l'applicazione a vari ambienti e requisiti specifici.
+- **Flexibility and Customization:**  
+  The ability to configure Nextcloud and ChatGPT settings separately allows the application to be tailored to various environments and specific requirements.
 
-- **Efficienza nella Gestione dei Media:**  
-  La sincronizzazione dei file tramite Nextcloud assicura che tutti i media necessari siano sempre aggiornati e disponibili, facilitando la pianificazione e la pubblicazione dei contenuti.
+- **Efficient Media Management:**  
+  File synchronization via Nextcloud ensures that all necessary media is always updated and available, facilitating content scheduling and publication.
 
-## Implementazioni Future
+## Future Implementations
 
-Il progetto è in continua evoluzione e sono previste ulteriori integrazioni per ampliare le funzionalità:
+The project is continuously evolving, and further integrations are planned to expand its capabilities:
 
-- **API WhatsApp per Notifiche:**  
-  Verrà implementata l'integrazione con le API di WhatsApp per inviare notifiche automatiche ai clienti ogni volta che vengono pubblicati nuovi contenuti, migliorando la comunicazione e il coinvolgimento.
+- **WhatsApp API for Notifications:**  
+  An integration with WhatsApp’s API will be implemented to automatically send notifications to clients whenever new content is published, improving communication and engagement.
 
-- **API META Business per Pianificazione Automatica:**  
-  Sarà introdotta la possibilità di pianificare direttamente le pubblicazioni su META Business. Questo permetterà di caricare e programmare i post in automatico una volta approvati dal cliente, eliminando la necessità di ricaricarli manualmente.
+- **META Business API for Automatic Scheduling:**  
+  A feature will be introduced to directly schedule posts on META Business. This will allow for posts to be automatically uploaded and scheduled once approved by the client, eliminating the need for manual re-uploading.
 
 ---
 
-Questa documentazione offre una panoramica approfondita del progetto, delle sue funzionalità e delle modalità di configurazione. Per ulteriori dettagli o supporto, consulta la documentazione tecnica interna o contatta lo sviluppatore.
+This documentation provides an in-depth overview of the project, its features, and configuration guidelines. For further details or support, please refer to the internal technical documentation or contact the developer.
