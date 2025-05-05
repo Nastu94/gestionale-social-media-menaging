@@ -8,6 +8,7 @@ use App\Models\Pubblicazione;
 use App\Models\MediaPubblicazione;
 use App\Models\MediaInPubblicazione;
 use App\Models\StatoPubblicazione;
+use Illuminate\Support\Str; 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -74,7 +75,7 @@ class PubblicazioneController extends Controller
      */
     public function store(Request $request)
     {
-    
+        
         $validated = $request->validate([
             'cliente_id' => 'required|exists:clienti,id',
             'selected_files' => 'nullable|array',
@@ -95,32 +96,31 @@ class PubblicazioneController extends Controller
             'data_pubblicazione' => $request->data_pubblicazione,
             'note' => $request->note,
         ]);
-    
-    
+        
         $selectedFiles = $request->input('selected_files', []);
-    
-        foreach ($selectedFiles as $filePath) {        
-            $proxyPrefix = 'prefisso-proxy-da-sostituire';
-            $nextcloudPrefix = 'prefisso-nextcloud-da-inserire';
-    
-            if (str_starts_with($filePath, $proxyPrefix)) {
-                // Rimuoviamo il prefisso proxy
-                $relativePath = substr($filePath, strlen($proxyPrefix));
+        
+        $proxyPrefix     = rtrim(config('services.proxy.prefix'), '/') . '/';
+        $nextcloudPrefix = rtrim(config('services.nextcloud.base_uri'), '/') . '/';
+        
+        foreach ($selectedFiles as $filePath) {
+        
+            // Se il file è stato caricato tramite proxy, riscrivilo verso Nextcloud
+            if (Str::startsWith($filePath, $proxyPrefix)) {
+                // Rimuoviamo la parte "https://clienti.sodanoconsulting.it/file/"
+                $relativePath = Str::after($filePath, $proxyPrefix);
                 // Ora costruiamo l'URL Nextcloud
-                $filePath = $nextcloudPrefix . $relativePath;
+                $filePath     = $nextcloudPrefix . ltrim($relativePath, '/');
             }
-
+            
             $media = MediaPubblicazione::create([
-                'nome' => $filePath,
+                'nome'       => $filePath,
                 'id_cliente' => $request->cliente_id,
             ]);
-    
-    
+        
             MediaInPubblicazione::create([
-                'id_media' => $media->id,
-                'id_pubblicazione' => $pubblicazione->id,
+                'id_media'        => $media->id,
+                'id_pubblicazione'=> $pubblicazione->id,
             ]);
-    
         }
     
         return redirect()->route('dashboard')->with('success', 'Pubblicazione creata con successo.');
@@ -134,76 +134,76 @@ class PubblicazioneController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function generateGpt(Request $request, $id)
-    {
-        // Recupera la pubblicazione dal DB (puoi aggiungere validazioni o policy in base alle tue esigenze)
+    {   
+        // Validazione della richiesta
         $pubblicazione = Pubblicazione::findOrFail($id);
+        $note          = $request->input('note');
+    
+        $apiKey = config('services.chat_gpt.api_key');
 
-        // Recupera le note dal form
-        $note = $request->input('note');
-
-        // Chiave API per OpenAI
-        $apiKey = 'chiave-API-chatgpt'; // Inserisci qui la tua chiave API
-
-        // Configurazione del prompt per GPT
+        // Verifica se la chiave API è presente
+        if (empty($apiKey)) {
+            return response()->json([
+                'error' => 'OpenAI API key mancante: verifica .env e config cache'
+            ], 500);
+        }
+        
         $messages = [
             [
-                "role" => "system",
-                "content" => $pubblicazione->cliente->promptGPT ?? 'Genera un testo creativo di massimo 100 parole in base alle note'
+                'role'    => 'system',
+                'content' => $pubblicazione->cliente->promptGPT
+                             ?? 'Genera un testo creativo di massimo 100 parole in base alle note',
             ],
             [
-                "role" => "user",
-                "content" => "Note: $note"
-            ]
+                'role'    => 'user',
+                'content' => "Note: $note",
+            ],
         ];
-
-        // Parametri per la richiesta
-        $data = [
-            "model" => "gpt-3.5-turbo",
-            "messages" => $messages,
-            "max_tokens" => 150,
+        
+        $payload = [
+            'model'      => 'gpt-3.5-turbo',
+            'messages'   => $messages,
+            'max_tokens' => 300,
         ];
-
-        // Inizializzazione cURL verso l'endpoint di OpenAI
+        
         $ch = curl_init('https://api.openai.com/v1/chat/completions');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $apiKey
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'Authorization: Bearer '.$apiKey,
+            ],
+            CURLOPT_POSTFIELDS     => json_encode($payload),
         ]);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-
+        
         $response = curl_exec($ch);
-
+        
         if ($response === false) {
-            // Errore di connessione
             $error = curl_error($ch);
             curl_close($ch);
-
+    
             return response()->json([
-                'error' => "Errore nella generazione del testo: $error"
+                'error' => "Errore nella generazione del testo: $error",
             ], 500);
         }
+        
 
         curl_close($ch);
-
-        // Interpretazione della risposta
-        $responseData = json_decode($response, true);
-
-        if (!isset($responseData['choices'][0]['message']['content'])) {
-            // Errore nella struttura della risposta
+        $data = json_decode($response, true);
+        
+        if (!isset($data['choices'][0]['message']['content'])) {
             return response()->json([
-                'error' => "Errore nella risposta API: " . json_encode($responseData)
+                'error' => 'Errore nella risposta API: '.json_encode($data),
             ], 500);
         }
 
-        $generatedText = $responseData['choices'][0]['message']['content'];
-
-        // Restituisce il testo in formato JSON, così da poterlo gestire via AJAX
+        // Salva il testo generato nella pubblicazione
         return response()->json([
-            'generatedText' => $generatedText
+            'generatedText' => $data['choices'][0]['message']['content'],
         ]);
     }
+    
 
     /**
      * Display the specified resource.
@@ -271,39 +271,46 @@ class PubblicazioneController extends Controller
         ]);
     
         $selectedFiles = $request->input('selected_files', []);
+
+        $proxyPrefix     = rtrim(config('services.proxy.prefix'), '/') . '/';
+        $nextcloudPrefix = rtrim(config('services.nextcloud.base_uri'), '/') . '/';
     
         // 1. Per ogni file controllo se esiste già nella tabella media_pubblicazioni. 
         // In caso contrario lo creo. Poi ottengo l'id.
         $mediaIds = [];
         foreach ($selectedFiles as $filePath) {
-            $proxyPrefix = 'prefisso-proxy-da-sostituire';
-            $nextcloudPrefix = 'prefisso-nextcloud-da-inserire';
-    
-            if (str_starts_with($filePath, $proxyPrefix)) {
-                // Rimuoviamo la parte del prefisso proxy
-                $relativePath = substr($filePath, strlen($proxyPrefix));
+
+            // Se il file è stato caricato tramite proxy, riscrivilo verso Nextcloud
+            if (Str::startsWith($filePath, $proxyPrefix)) {
+                // Rimuoviamo la parte "https://clienti.sodanoconsulting.it/file/"
+                $relativePath = Str::after($filePath, $proxyPrefix);
                 // Ora costruiamo l'URL Nextcloud
-                $filePath = $nextcloudPrefix . $relativePath;
+                $filePath     = $nextcloudPrefix . ltrim($relativePath, '/');
             }
+
+            // Controlla se il media esiste già
             $media = MediaPubblicazione::where('nome', $filePath)->first();
+
+            // Se il media non esiste già, lo creiamo
             if (!$media) {    
                 // Se non ci sono media esistenti, dobbiamo capire come recuperare l'id_cliente.
                 // Potresti aver bisogno di passare l'id_cliente come input nascosto se non sempre presente.
                 // Per ora assumiamo che la pubblicazione abbia almeno un media, altrimenti va gestita diversamente.
                 $clienteId = $pubblicazione->id_cliente;
-    
-    
+                // Se non riesci a recuperare l'id_cliente, logghiamo un errore
                 if (!$clienteId) {
                     // Se cliente_id non può essere recuperato, logghiamo un errore
                     Log::error('Impossibile recuperare cliente_id per creare media_pubblicazioni', ['file' => $filePath, 'pubblicazione_id' => $pubblicazione->id]);
                     // Potresti decidere di ritornare un errore JSON o gestirlo diversamente
                 }
-    
+                
+                // Crea un nuovo media_pubblicazione
                 $media = MediaPubblicazione::create([
                     'nome' => $filePath,
                     'id_cliente' => $clienteId,
                 ]);
             } else {
+                // Se il media esiste già, logghiamo un messaggio informativo
                 Log::info('Media esistente trovato', ['media_id' => $media->id, 'file' => $filePath]);
             }
             $mediaIds[] = $media->id;
@@ -350,21 +357,35 @@ class PubblicazioneController extends Controller
      * @param  int $id
      * @return \Illuminate\Http\Response
      */
-    public function pianifica($id)
+    public function pianifica(Request $request, $id)
     {
         $pubblicazione = Pubblicazione::findOrFail($id);
-
-        // Controllo che lo stato attuale sia 4
+    
+        // Controlla che lo stato attuale sia 4 (Approvata)
         if ($pubblicazione->stato_id != 4) {
-            return redirect()->route('pubblicazioni.show', $id)->with('error', 'La pubblicazione non è pronta per essere pianificata.');
+            // Se la richiesta è AJAX, restituisci JSON con errore
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La pubblicazione non è pronta per essere pianificata.'
+                ], 400);
+            }
+            // Altrimenti, usa il redirect con flash message
+            return redirect()->route('dashboard', $id)->with('error', 'La pubblicazione non è pronta per essere pianificata.');
         }
-
-        $pubblicazione->stato_id = 5; // Stato ID per "Pianificata"
+    
+        $pubblicazione->stato_id = 5; // Imposta lo stato a "Pianificata"
         $pubblicazione->save();
-
-        return redirect()->route('pubblicazioni.show', $id)->with('success', 'Pubblicazione pianificata con successo.');
+    
+        // Se la richiesta è AJAX, restituisce un JSON di successo
+        if ($request->ajax()) {
+            return response()->json(['success' => true]);
+        }
+    
+        // Altrimenti, reindirizza alla dashboard con un messaggio di successo
+        return redirect()->route('dashboard', $id)->with('success', 'Pubblicazione pianificata con successo.');
     }
-
+    
     /**
      * Remove the specified resource from storage.
      *

@@ -41,4 +41,19 @@ return [
         'redirect' => env('FACEBOOK_REDIRECT_URL'),
     ],
 
+    'proxy' => [
+        'prefix' => env('PROXY_PREFIX', 'https://clienti.sodanoconsulting.it/file/'),
+    ],
+
+    'nextcloud' => [
+        'base_uri' => env('NEXTCLOUD_BASE_URI'),
+        'username' => env('NEXTCLOUD_USERNAME'),
+        'password' => env('NEXTCLOUD_PASSWORD'),
+        'prefix'   => env('NEXTCLOUD_PREFIX'),
+    ],
+
+    'chat_gpt' => [
+        'api_key' => env('API_KEY_CHATGPT'),
+    ],
+
 ];

@@ -120,13 +120,16 @@
                                                                 <div class="w-16 h-16 bg-gray-300 flex-shrink-0 rounded overflow-hidden">
                                                                     @if($pubblicazione->media->first())
                                                                         @php
-                                                                            // Rimuovi la parte iniziale dell'URL di Nextcloud
+                                                                            use Illuminate\Support\Str;
 
-                                                                            $relativePath = str_replace(
-                                                                                'parte-iniziale-dell-URL-nextcloud',
-                                                                                '',
-                                                                                $pubblicazione->media->first()->nome
-                                                                            );
+                                                                            // Leggiamo il prefisso Nextcloud dal config (.env → config/services.php)
+                                                                            $baseUri = rtrim(config('services.nextcloud.base_uri'), '/').'/';
+
+                                                                            // Prendiamo il primo media
+                                                                            $fullUrl = $pubblicazione->media->first()->nome;
+
+                                                                            // Rimuoviamo dinamicamente il prefisso per ottenere il percorso relativo
+                                                                            $relativePath = Str::after($fullUrl, $baseUri);
                                                                         @endphp
 
                                                                         <img 

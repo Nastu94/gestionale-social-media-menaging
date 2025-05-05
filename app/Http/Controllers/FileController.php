@@ -3,13 +3,24 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 
 class FileController extends Controller
 {
-    private $baseUri = 'URL-nextcould-DAV';
-    private $username = 'username-nextcloud';
-    private $password = 'password.nextcloud'; // Da sostituire dopo i test
+    private string $baseUri;
+    private string $prefix;
+    private string $username;
+    private string $password;
+
+    public function __construct()
+    {
+        // Peschi tutto da config/services.php
+        $this->baseUri  = rtrim(config('services.nextcloud.base_uri'), '/').'/';
+        $this->prefix   = ltrim(config('services.nextcloud.prefix'), '/');
+        $this->username = config('services.nextcloud.username');
+        $this->password = config('services.nextcloud.password');
+    }
 
     /**
      * Mostra l'elenco dei file in una directory.
@@ -113,35 +124,35 @@ class FileController extends Controller
      * @return array
      * @throws \Exception
      */
-    private function listFilesWithCurl($path = '/')
+    private function listFilesWithCurl(string $path = '/'): array
     {
-        // Rimuovi slash iniziale per evitare doppie barre
-        $cleanPath = ltrim($path, '/');
+        // 1. normalizza l’input
+        $cleanPath = ltrim($path, '/');                     // rimuove eventuale slash iniziale
 
-        // Rimuovi eventuali prefissi già presenti
-        if (strpos($cleanPath, 'prefisso-da-eliminare') === 0) {
-            $cleanPath = substr($cleanPath, strlen('prefisso-da-eliminare'));
+        // 2. se l’input contiene già il prefisso completo, toglilo
+        if (Str::startsWith($cleanPath, $this->prefix)) {
+            $cleanPath = Str::after($cleanPath, $this->prefix);
         }
 
-        // Normalizza il percorso
+        // 3. “pulizia” eventuali ../, //
         $cleanPath = $this->normalizePath($cleanPath);
 
-        // Costruisci l'URL finale
-        $url = rtrim($this->baseUri, '/') . '/' . $cleanPath;
+        // 4. URL finale
+        $url = $this->baseUri.$cleanPath;                  // baseUri ha già lo slash finale
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_USERPWD, "{$this->username}:{$this->password}");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Depth: 1',
+        // 5. cURL WebDAV PROPFIND
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_USERPWD        => "{$this->username}:{$this->password}",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => ['Depth: 1'],
+            CURLOPT_CUSTOMREQUEST  => 'PROPFIND',
         ]);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PROPFIND');
 
         $response = curl_exec($ch);
 
         if (curl_errno($ch)) {
-            throw new \Exception('Errore cURL: ' . curl_error($ch));
+            throw new \Exception('Errore cURL: '.curl_error($ch));
         }
 
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -153,7 +164,7 @@ class FileController extends Controller
 
         return $this->parseXmlResponse($response);
     }
-
+    
     /**
      * Analizza la risposta XML di Nextcloud e restituisce un array con i file e le cartelle.
      *
@@ -190,24 +201,30 @@ class FileController extends Controller
 
     /**
      * Estrae il percorso relativo dall'href completo.
-     * L'href è in forma assoluta, 
+     * L'href è in forma assoluta (remote.php/dav/files/vittoriosoligo/...), 
      * da cui recuperiamo solo la parte relativa.
      *
      * @param string $href
      * @return string
      */
-    private function extractRelativePath($href)
+    private function extractRelativePath(string $href): string
     {
-        // Rimuoviamo la parte iniziale per ottenere percorso relativo
-        $prefix = 'prefisso-url';
-        if (strpos($href, $prefix) === 0) {
-            $rel = substr($href, strlen($prefix));
-            // Se finisce con '/', toglilo
+        // Assicura che il prefisso inizi e finisca con uno slash:
+        $prefixWithSlash = '/' . trim($this->prefix, '/') . '/';
+    
+        // Se l’href inizia con il prefisso, rimuovilo
+        if (Str::startsWith($href, $prefixWithSlash)) {
+            $rel = Str::after($href, $prefixWithSlash); // tutto ciò che viene dopo
+    
+            // Togli l’eventuale slash finale e normalizza
             $rel = rtrim($rel, '/');
+    
+            // Se vuoto ⇒ root, altrimenti anteponi uno slash
             return $rel === '' ? '/' : '/' . $rel;
         }
-
-        return '/'; // Se non trova nulla, è la root
+    
+        // Se non corrisponde, considero root
+        return '/';
     }
 
     public function showFile($path)

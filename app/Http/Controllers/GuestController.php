@@ -27,9 +27,14 @@ class GuestController extends Controller
         // Recupera le pubblicazioni del cliente con quello stato
         $pubblicazioni = $cliente->pubblicazioni()->where('stato_id', $statoValutazioneId)->get();
 
-        $pubblicazioni->each(function($pub) {
-            $pub->media->each(function($m) {
-                $m->nome = str_replace('url-da-usare', '', $m->nome);
+        // Recupera il percorso base per i file da Nextcloud
+        $baseUri = config('services.nextcloud.base_uri');
+
+        // Modifica il nome dei file per rimuovere il percorso base
+        $pubblicazioni->each(function ($pub) use ($baseUri) {
+            $pub->media->each(function ($m) use ($baseUri) {
+                // Rimuovi il percorso base dal nome del file
+                $m->nome = str_replace($baseUri, '', $m->nome);
             });
         });
 
@@ -81,4 +86,5 @@ class GuestController extends Controller
     
         return redirect()->back()->with('success', 'La pubblicazione è stata rifiutata e la motivazione è stata salvata.');
     }
+    
 }

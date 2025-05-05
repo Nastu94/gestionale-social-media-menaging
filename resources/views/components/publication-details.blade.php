@@ -1,14 +1,18 @@
 @php
+    use Illuminate\Support\Str;
+
+    // Prefisso definito in config/services.php → .env
+    $baseUri = rtrim(config('services.nextcloud.base_uri'), '/').'/';
+
     // Mappiamo la collezione di media, convertendo i link Nextcloud in link "interni"
-    $mediaMappati = $pubblicazione->media->map(function($m) {
-        // Rimuovi la parte dell'URL Nextcloud
-        $relativePath = str_replace(
-            'URL-nextcloud-DAV',
-            '',
-            $m->nome
-        );
-        // Crea l'URL interno (rotta con FileController)
+    $mediaMappati = $pubblicazione->media->map(function ($m) use ($baseUri) {
+
+        // Togli il prefisso Nextcloud e ottieni il percorso relativo
+        $relativePath = Str::after($m->nome, $baseUri);
+
+        // Rotta interna che serve il file
         $m->nome = route('file.show', ['path' => $relativePath]);
+
         return $m;
     });
 @endphp
