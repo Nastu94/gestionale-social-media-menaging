@@ -7,8 +7,6 @@
                     <div class="w-16 h-16 bg-gray-300 flex-shrink-0 rounded overflow-hidden">
                         @if($pubblicazione->media->first())
                             @php
-                                use Illuminate\Support\Str;
-
                                 // Leggiamo il prefisso Nextcloud dal config (.env → config/services.php)
                                 $baseUri = rtrim(config('services.nextcloud.base_uri'), '/').'/';
 
@@ -16,7 +14,7 @@
                                 $fullUrl = $pubblicazione->media->first()->nome;
 
                                 // Rimuoviamo dinamicamente il prefisso per ottenere il percorso relativo
-                                $relativePath = Str::after($fullUrl, $baseUri);
+                                $relativePath = \Illuminate\Support\Str::after($fullUrl, $baseUri);
                             @endphp
 
                             <img 

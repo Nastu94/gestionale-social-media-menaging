@@ -1,6 +1,4 @@
 @php
-    use Illuminate\Support\Str;
-
     // Prefisso definito in config/services.php → .env
     $baseUri = rtrim(config('services.nextcloud.base_uri'), '/').'/';
 
@@ -8,7 +6,7 @@
     $mediaMappati = $pubblicazione->media->map(function ($m) use ($baseUri) {
 
         // Togli il prefisso Nextcloud e ottieni il percorso relativo
-        $relativePath = Str::after($m->nome, $baseUri);
+        $relativePath = \Illuminate\Support\Str::after($m->nome, $baseUri);
 
         // Rotta interna che serve il file
         $m->nome = route('file.show', ['path' => $relativePath]);
